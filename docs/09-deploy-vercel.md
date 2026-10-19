@@ -27,7 +27,7 @@ Command-line alternative: in `apps/mobile-web` run `npx vercel` (first time, it 
 ## Deploying from your own computer (without connecting GitHub)
 If your Vercel login is not connected to GitHub, or you just want to push a build by hand, you can upload the finished site instead of letting Vercel build it:
 
-1. Run `npx expo export --platform web` in `apps/mobile-web` (Node 22). The site is created in `dist/`.
+1. Run `npx expo export --platform web` in `apps/mobile-web` (Node 22). The site is created in `dist/`. If you use Supabase, `.env` must exist first: its two values are built into the bundle (the Supabase URL ends up in the `__common-*.js` chunk, not the entry file).
 2. Copy `dist/` to an empty temporary folder. **Rename `assets/node_modules` to `assets/vendor` and replace `assets/node_modules/` with `assets/vendor/` inside the `.js` files.** Vercel never uploads any folder called `node_modules`, so without this the router's built-in icons (used on the not-found screen) would be missing.
 3. In that folder add a `vercel.json` with the `rewrites` and `headers` from `apps/mobile-web/vercel.json`, plus `"buildCommand": null`, `"installCommand": null`, `"outputDirectory": null` (so Vercel does not try to build), and the `.vercel/project.json` created by `vercel link`.
 4. Run `npx vercel deploy --prod --yes` in that folder. The upload is about 3 MB.

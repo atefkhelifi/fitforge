@@ -19,7 +19,15 @@ You need Node 22 (see the README note) and a terminal in `apps/mobile-web`.
 (`setup-all.sql` is just migrations 0001–0006 joined together. If you already ran an older version, run only the newer migration files: 0005 adds checks that stop a user attaching rows to someone else's workout, meal or photo folder, and 0006 lets sets be logged for any exercise from the built-in library (without it, syncing a workout that uses a library exercise fails). If you add a migration later, run only that file.)
 
 ## 3. Allow sign-up
-**Authentication > Providers > Email**: make sure Email is enabled. While developing, turn **off** "Confirm email", otherwise every test account needs an email click before it can sign in.
+Three separate switches decide whether people can sign up. Each one gives a different error when it is off, so check all three (and click **Save** after each; the toggle does nothing until you save):
+
+| Where | Setting | When it is off, sign-up says |
+|---|---|---|
+| **Authentication > Providers > Email** | **Enable email provider** | "Email signups are disabled" |
+| **Authentication > Sign In / Providers** (top of the page; some dashboards: **Settings**) | **Allow new users to sign up** | "Signups not allowed for this instance" |
+| **Authentication > Providers > Email** | **Confirm email** | sign-up works but returns no session until the emailed link is clicked |
+
+While developing, turn **Confirm email** **off**, otherwise every test account needs an email click before it can sign in. Turn it back on before real users arrive, and then set **Authentication > URL Configuration > Site URL** to your deployed address so the links in the emails point to the right place.
 
 ## 4. Connect the app
 1. In **Project Settings > API** copy the **Project URL** and the **anon / publishable key**. Never use the `service_role` / secret key in the app.
@@ -28,23 +36,22 @@ You need Node 22 (see the README note) and a terminal in `apps/mobile-web`.
 
 ## 5. Get a free Gemini key (meal scan)
 1. Go to https://aistudio.google.com, sign in and click **Get API key**. No card needed.
-2. Keep the key private. It is only ever stored as a Supabase secret, never in the app.
+2. Keep the key private. It is only ever stored as a Supabase secret, never in the app, in `.env` or in a chat. If a key was ever pasted somewhere public, create a new one and delete the old one.
 
 ## 6. Deploy the meal-scan function
-Run these in `apps/mobile-web` (the Supabase CLI runs through `npx`, no install needed):
+Run these from the **repo root** (where the `supabase` folder is). The Supabase CLI runs through `npx`, no install needed. `YOUR_REF` is the part of your project URL before `.supabase.co`.
 
 ```powershell
-cd ..\..                                   # repo root, where the supabase folder is
-npx supabase init                          # creates supabase/config.toml; answer "n" to the VS Code prompts
-npx supabase login                         # opens the browser
-npx supabase link --project-ref YOUR_REF   # YOUR_REF is the part of your URL before .supabase.co
-npx supabase secrets set GEMINI_API_KEY=YOUR_GEMINI_KEY
-npx supabase functions deploy analyze-meal
-npx supabase functions deploy delete-account   # powers Profile > Delete my account
+npx supabase login                         # opens the browser; wait for "You are now logged in"
+npx supabase functions deploy analyze-meal --project-ref YOUR_REF --use-api
+npx supabase functions deploy delete-account --project-ref YOUR_REF --use-api   # powers Profile > Delete my account
 ```
 
-If `deploy` complains about Docker, try `npx supabase functions deploy analyze-meal --use-api` or check
-https://supabase.com/docs/guides/functions/deploy for the current flags.
+`--use-api` deploys without Docker, and no `supabase init` or `link` is needed when you pass `--project-ref`.
+
+**Set the Gemini key** either in the dashboard (**Edge Functions > Secrets**, name `GEMINI_API_KEY`, which keeps the key out of your terminal history) or with `npx supabase secrets set GEMINI_API_KEY=...`.
+
+**If `login` does not save (the CLI keeps saying "Access token not provided"):** create a token at https://supabase.com/dashboard/account/tokens, set it only for the current terminal (`$env:SUPABASE_ACCESS_TOKEN = "sbp_..."`), run the deploy commands, close the terminal, and then **delete the token** from that page. It can manage your whole account, so never put it in a file or a chat.
 
 Optional secrets: `MEAL_MODEL` (default `gemini-2.5-flash`) and `MEAL_DAILY_LIMIT` (default 30 analyses per user per day).
 
@@ -53,7 +60,10 @@ Optional secrets: `MEAL_MODEL` (default `gemini-2.5-flash`) and `MEAL_DAILY_LIMI
 cd apps\mobile-web
 npm run check-setup
 ```
-It tells you which step is missing (tables, seed data, function) and what to run. It cannot check the Gemini key.
+It tells you which step is missing (tables, seed data, both functions) and what to run. It cannot check the Gemini key or whether sign-ups are open; the first scan, or a test sign-up, shows that.
+
+## 7b. Use it on the deployed site
+The `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` values are built into the site when it is built. After you create `.env`, rebuild and redeploy (see [09-deploy-vercel.md](09-deploy-vercel.md)); if Vercel builds from GitHub, add the same two variables in the Vercel project instead.
 
 ## 8. Try it
 1. Open the app, **Profile > Create account**, sign in.
@@ -72,6 +82,8 @@ It tells you which step is missing (tables, seed data, function) and what to run
 | Sync says "Could not upload a meal" | Migration 0003 missing (the `dish_name` column) |
 | Photo upload fails | Migration 0004 missing, or the `progress-photos` bucket was deleted |
 | Sign-up works but sign-in says email not confirmed | "Confirm email" is on; turn it off or click the email link |
+| "Email signups are disabled" / "Signups not allowed for this instance" | A sign-up switch is off or not saved, see step 3 |
+| `check-setup` says the functions are "not deployed" | Run the deploy commands in step 6 from the repo root, and make sure the CLI is logged in |
 
 ## Privacy notes to put in your policy before sharing the app
 - Meal photos are sent to Google Gemini for analysis and are not stored by the app. On Google's free tier, requests may be used to improve Google products.
