@@ -1,5 +1,7 @@
 # FitForge — Gym, Progress & AI Nutrition App
 
+**Live app: https://fitforge-ruddy.vercel.app** (runs in your browser; works on phone and desktop. Your data stays in your own browser.)
+
 Cross-platform fitness app (mobile + desktop + web) that gives you:
 
 1. **Training programs** — generated/customised workout plans (split, sets, reps, rest).
