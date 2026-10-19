@@ -1,0 +1,16 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+
+# Secrets: never commit real keys
+.env
+.env.*
+!.env.example
+
+# Built installers (rebuild with: npm run desktop:build)
+installers/
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
