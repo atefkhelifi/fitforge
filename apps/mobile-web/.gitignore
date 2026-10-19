@@ -49,3 +49,5 @@ src-tauri/target
 
 # Built installers (regenerate with: npm run desktop:build)
 installers/
+
+.vercel

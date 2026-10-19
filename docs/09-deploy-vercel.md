@@ -24,6 +24,20 @@ This guide uses Vercel. The configuration is already in the repo: `apps/mobile-w
 
 Command-line alternative: in `apps/mobile-web` run `npx vercel` (first time, it asks you to log in and link the project), then `npx vercel --prod`.
 
+## Deploying from your own computer (without connecting GitHub)
+If your Vercel login is not connected to GitHub, or you just want to push a build by hand, you can upload the finished site instead of letting Vercel build it:
+
+1. Run `npx expo export --platform web` in `apps/mobile-web` (Node 22). The site is created in `dist/`.
+2. Copy `dist/` to an empty temporary folder. **Rename `assets/node_modules` to `assets/vendor` and replace `assets/node_modules/` with `assets/vendor/` inside the `.js` files.** Vercel never uploads any folder called `node_modules`, so without this the router's built-in icons (used on the not-found screen) would be missing.
+3. In that folder add a `vercel.json` with the `rewrites` and `headers` from `apps/mobile-web/vercel.json`, plus `"buildCommand": null`, `"installCommand": null`, `"outputDirectory": null` (so Vercel does not try to build), and the `.vercel/project.json` created by `vercel link`.
+4. Run `npx vercel deploy --prod --yes` in that folder. The upload is about 3 MB.
+
+**Do not run `vercel deploy` from inside `apps/mobile-web`.** Before the `.vercelignore` was added it tried to upload the 4.3 GB desktop build folder (`src-tauri/target`) and used several GB of memory. `.vercelignore` now excludes it, but check that the upload size shown is a few MB, and cancel if it is not.
+
+**Connecting GitHub later (automatic deploys on every push):** in the Vercel project open *Settings → Git*, connect `atefkhelifi/fitforge`, and set *Settings → General → Root Directory* to `apps/mobile-web`. Your Vercel account needs GitHub as a login connection first (*Account Settings → Authentication*). Vercel then builds on its own machines with the settings in `vercel.json`, so none of the steps above are needed.
+
+**Deployment Protection:** the production address is public. Vercel's "Vercel Authentication" setting applies to preview and per-deployment addresses, which is expected.
+
 ## Do this after the first deploy
 - Open the address and **reload a deep page** such as `/train/library`. It should show the library, not a 404.
 - Open it on your phone. Over HTTPS the **Take photo** button in the meal scan works (browsers only allow the live camera on secure pages).
@@ -44,7 +58,9 @@ Command-line alternative: in `apps/mobile-web` run `npx vercel` (first time, it 
 - Served with the same routing and header rules as `vercel.json`, in a real browser: the first-visit setup screen, reloading `/train/library` and an exercise page directly, photos loading from the CDN, local mode without Supabase keys, a clean not-found screen, no failing requests, no page errors. Without the rewrite rule the deep links return 404, which is why it is there.
 - Environment variables starting with `EXPO_PUBLIC_` are built into the bundle, and nothing leaks into a build made without them.
 
-**Not checked:** an actual deployment on Vercel, which needs your account. If the first build fails, send the build log.
+- A real deployment by the upload method above was made to Vercel, and the same browser checks were run against the live address: all passed.
+
+**Not exercised yet:** a Git-connected deployment where Vercel itself runs `npx expo export` on its build machines. The build command and Node version are tested locally, but if that first build fails, read the build log (*Deployments → the failed one → Build Logs*).
 
 ## Troubleshooting
 | Symptom | Likely cause |
