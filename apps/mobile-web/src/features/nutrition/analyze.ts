@@ -8,8 +8,12 @@ import { useGeminiKey } from './gemini-key';
 
 type Input = { imageBase64?: string; note?: string };
 
+/** Shown when the app has no account system at all (no Supabase configured). */
 export const NO_AI_MESSAGE =
   'To analyse meals, add a free Gemini key in Profile > AI meal scan, or connect Supabase (docs/07-setup.md).';
+
+/** Shown when accounts exist but the visitor is signed out and has no key of their own. */
+export const SIGN_IN_MESSAGE = 'Sign in (free) to analyse meals. Go to Profile > Account.';
 
 /** Shrinks a photo to ~1024 px JPEG so the upload is small and the analysis fast. */
 export async function prepareImage(uri: string): Promise<string> {
@@ -110,5 +114,5 @@ export async function analyzeMeal(input: Input): Promise<MealAnalysis> {
   }
 
   if (ownKey) return analyzeWithOwnKey(ownKey, input);
-  throw new Error(NO_AI_MESSAGE);
+  throw new Error(supabase ? SIGN_IN_MESSAGE : NO_AI_MESSAGE);
 }

@@ -8,7 +8,7 @@ vi.mock('expo-image-manipulator', () => ({ ImageManipulator: {}, SaveFormat: { J
 // No Supabase configured: this is the situation behind "Meal analysis needs Supabase".
 vi.mock('@/lib/supabase', () => ({ supabase: null }));
 
-import { analyzeMeal, NO_AI_MESSAGE } from '../analyze';
+import { analyzeMeal, NO_AI_MESSAGE, SIGN_IN_MESSAGE } from '../analyze';
 import { useGeminiKey } from '../gemini-key';
 
 const good = {
@@ -45,6 +45,12 @@ describe('analyzeMeal without Supabase', () => {
     await expect(analyzeMeal({ note: '2 eggs' })).rejects.toThrow(NO_AI_MESSAGE);
     expect(NO_AI_MESSAGE).toContain('Gemini key');
     expect(NO_AI_MESSAGE).not.toMatch(/^Meal analysis needs Supabase/);
+  });
+
+  it('keeps the two messages distinct and never mentions a real key', () => {
+    expect(SIGN_IN_MESSAGE).toMatch(/^Sign in/);
+    expect(SIGN_IN_MESSAGE).not.toBe(NO_AI_MESSAGE);
+    expect(`${SIGN_IN_MESSAGE}${NO_AI_MESSAGE}`).not.toMatch(/AQ\.|AIza/);
   });
 
   it('analyses with the user\'s own key, calling Google directly', async () => {
