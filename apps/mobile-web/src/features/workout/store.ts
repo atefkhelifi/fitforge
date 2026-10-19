@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { findDay } from '@/data/programs';
+import { findDay } from '@/features/programs/store';
 import { useHistory } from '@/features/history/store';
 import { useUnitsStore } from '@/features/units/store';
 import { lastSetsFor } from '@/lib/stats';

@@ -16,7 +16,7 @@ You need Node 22 (see the README note) and a terminal in `apps/mobile-web`.
 2. Paste the whole contents of `supabase/setup-all.sql` and click **Run**. It creates all tables, the security rules, the exercise list and the private photo bucket.
 3. It should end with "Success". Run it **once**: running it twice fails with "already exists", which is harmless but confusing.
 
-(`setup-all.sql` is just migrations 0001–0005 joined together. If you already ran an older version, run only the newer migration files: 0005 adds checks that stop a user attaching rows to someone else's workout, meal or photo folder. If you add a migration later, run only that file.)
+(`setup-all.sql` is just migrations 0001–0006 joined together. If you already ran an older version, run only the newer migration files: 0005 adds checks that stop a user attaching rows to someone else's workout, meal or photo folder, and 0006 lets sets be logged for any exercise from the built-in library (without it, syncing a workout that uses a library exercise fails). If you add a migration later, run only that file.)
 
 ## 3. Allow sign-up
 **Authentication > Providers > Email**: make sure Email is enabled. While developing, turn **off** "Confirm email", otherwise every test account needs an email click before it can sign in.

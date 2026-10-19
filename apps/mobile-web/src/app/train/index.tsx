@@ -1,14 +1,20 @@
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ExerciseImage } from '@/components/exercise-image';
 import { Screen } from '@/components/screen';
 import { Card, Cell, Chip, Grid, Label, Num, PrimaryButton } from '@/components/ui';
-import { exercises, programs } from '@/data/programs';
+import { exerciseInfo } from '@/data/exercise-catalog';
+import { Program } from '@/data/programs';
+import { useProgramDraft } from '@/features/programs/draft';
+import { useAllPrograms } from '@/features/programs/store';
 import { useUnits } from '@/features/units/store';
 import { useWorkout } from '@/features/workout/store';
+import { EDITOR_PATH, href, LIBRARY_PATH } from '@/lib/nav';
+import { duplicateProgram, emptyProgram } from '@/lib/program-draft';
 import { toDisplayWeight, weightUnit } from '@/lib/units';
 import { radius } from '@/theme/tokens';
-import { createStyles } from '@/theme/use-theme';
+import { createStyles, useColors } from '@/theme/use-theme';
 
 const syncLabel = {
   pending: 'Saving…',
@@ -17,20 +23,88 @@ const syncLabel = {
   error: 'Could not save this workout. Check your connection.',
 } as const;
 
+/** A copy the editor can change freely without touching the stored program. */
+const cloneProgram = (p: Program): Program => ({ ...p, days: p.days.map((d) => ({ ...d, slots: d.slots.map((s) => ({ ...s })) })) });
+
 export default function TrainScreen() {
   const styles = useStyles();
+  const colors = useColors();
   const router = useRouter();
   const { session, lastSummary, start } = useWorkout();
   const units = useUnits();
+  const programs = useAllPrograms();
+  const startDraft = useProgramDraft((s) => s.start);
+
+  const mine = programs.filter((p) => p.custom);
+  const templates = programs.filter((p) => !p.custom);
 
   const open = (dayId: string) => {
     if (!session || session.dayId !== dayId) start(dayId);
     router.push('/train/session');
   };
 
+  const edit = (program: Program, existing: boolean) => {
+    startDraft(existing ? cloneProgram(program) : duplicateProgram(program), existing);
+    router.push(href(EDITOR_PATH));
+  };
+
+  const create = () => {
+    startDraft(emptyProgram(), false);
+    router.push(href(EDITOR_PATH));
+  };
+
+  const renderProgram = (p: Program) => (
+    <Cell key={p.id}>
+      <Card style={{ gap: 12, flexGrow: 1 }}>
+        <View style={styles.programHead}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.programName}>{p.name}</Text>
+            <Text style={styles.muted}>
+              {p.days.length} day{p.days.length === 1 ? '' : 's'} / week
+            </Text>
+          </View>
+          <Chip>{p.goal}</Chip>
+        </View>
+        {p.days.map((d) => (
+          <Pressable
+            key={d.id}
+            accessibilityRole="button"
+            accessibilityLabel={`Start ${d.name}`}
+            onPress={() => open(d.id)}
+            style={({ pressed }) => [styles.day, pressed && { opacity: 0.8 }]}>
+            <View style={styles.thumbs}>
+              {d.slots.slice(0, 3).map((s) => (
+                <ExerciseImage key={s.exerciseId} exerciseId={s.exerciseId} style={styles.thumb} label="" />
+              ))}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.dayTitle}>{d.name}</Text>
+              <Text style={styles.muted} numberOfLines={1}>
+                {d.slots.map((s) => exerciseInfo(s.exerciseId).name).join(' · ')}
+              </Text>
+            </View>
+            <Text style={styles.go}>Start</Text>
+          </Pressable>
+        ))}
+        <Pressable accessibilityRole="button" onPress={() => edit(p, !!p.custom)} style={styles.editBtn}>
+          <Text style={styles.editText}>{p.custom ? 'Edit program' : 'Copy and edit'}</Text>
+        </Pressable>
+      </Card>
+    </Cell>
+  );
+
   return (
     <Screen wide>
       <Text style={styles.title}>Train</Text>
+
+      <View style={styles.actions}>
+        <Pressable accessibilityRole="button" onPress={() => router.push(href(LIBRARY_PATH))} style={[styles.action, { backgroundColor: colors.surface }]}>
+          <Text style={styles.actionText}>Exercise library</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" onPress={create} style={[styles.action, { backgroundColor: colors.primary }]}>
+          <Text style={[styles.actionText, { color: colors.onPrimary }]}>+ New program</Text>
+        </Pressable>
+      </View>
 
       {session && (
         <Card style={{ gap: 12 }}>
@@ -53,37 +127,14 @@ export default function TrainScreen() {
         </Card>
       )}
 
-      <Grid>
-      {programs.map((p) => (
-        <Cell key={p.id}>
-        <Card style={{ gap: 12, flexGrow: 1 }}>
-          <View style={styles.programHead}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.programName}>{p.name}</Text>
-              <Text style={styles.muted}>{p.daysPerWeek} days / week</Text>
-            </View>
-            <Chip>{p.goal}</Chip>
-          </View>
-          {p.days.map((d) => (
-            <Pressable
-              key={d.id}
-              accessibilityRole="button"
-              accessibilityLabel={`Start ${d.name}`}
-              onPress={() => open(d.id)}
-              style={({ pressed }) => [styles.day, pressed && { opacity: 0.8 }]}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.dayTitle}>{d.name}</Text>
-                <Text style={styles.muted} numberOfLines={1}>
-                  {d.slots.map((s) => exercises[s.exerciseId].name).join(' · ')}
-                </Text>
-              </View>
-              <Text style={styles.go}>Start</Text>
-            </Pressable>
-          ))}
-        </Card>
-        </Cell>
-      ))}
-      </Grid>
+      {mine.length > 0 && (
+        <>
+          <Text style={styles.section}>My programs</Text>
+          <Grid>{mine.map(renderProgram)}</Grid>
+          <Text style={styles.section}>Ready-made programs</Text>
+        </>
+      )}
+      <Grid>{templates.map(renderProgram)}</Grid>
     </Screen>
   );
 }
@@ -98,24 +149,34 @@ function Stat({ value, unit }: { value: string; unit: string }) {
   );
 }
 
-const useStyles = createStyles((colors) => StyleSheet.create({
-  title: { color: colors.text, fontSize: 30, fontWeight: '800', letterSpacing: -0.5 },
-  dayName: { color: colors.text, fontSize: 22, fontWeight: '800' },
-  muted: { color: colors.textMuted, fontSize: 13 },
-  stats: { flexDirection: 'row', gap: 28 },
-  statValue: { fontSize: 24, fontWeight: '800' },
-  programHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  programName: { color: colors.text, fontSize: 18, fontWeight: '800' },
-  day: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.surface2,
-    borderRadius: radius.md,
-    paddingHorizontal: 16,
-    minHeight: 64,
-    paddingVertical: 10,
-  },
-  dayTitle: { color: colors.text, fontSize: 15, fontWeight: '700' },
-  go: { color: colors.primary, fontSize: 14, fontWeight: '800' },
-}));
+const useStyles = createStyles((colors) =>
+  StyleSheet.create({
+    title: { color: colors.text, fontSize: 30, fontWeight: '800', letterSpacing: -0.5 },
+    section: { color: colors.textMuted, fontSize: 12, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginTop: 4 },
+    actions: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+    action: { flexGrow: 1, flexBasis: 150, height: 48, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+    actionText: { color: colors.text, fontSize: 15, fontWeight: '800' },
+    dayName: { color: colors.text, fontSize: 22, fontWeight: '800' },
+    muted: { color: colors.textMuted, fontSize: 13 },
+    stats: { flexDirection: 'row', gap: 28 },
+    statValue: { fontSize: 24, fontWeight: '800' },
+    programHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    programName: { color: colors.text, fontSize: 18, fontWeight: '800' },
+    day: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: colors.surface2,
+      borderRadius: radius.md,
+      paddingHorizontal: 12,
+      minHeight: 64,
+      paddingVertical: 10,
+    },
+    thumbs: { flexDirection: 'row', gap: 4 },
+    thumb: { width: 36, height: 36, borderRadius: 8, overflow: 'hidden' },
+    dayTitle: { color: colors.text, fontSize: 15, fontWeight: '700' },
+    go: { color: colors.primary, fontSize: 14, fontWeight: '800' },
+    editBtn: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+    editText: { color: colors.primary, fontSize: 14, fontWeight: '800' },
+  }),
+);

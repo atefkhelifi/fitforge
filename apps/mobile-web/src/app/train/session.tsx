@@ -3,13 +3,15 @@ import { Redirect, useRouter } from 'expo-router';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ExercisePhoto } from '@/components/exercise-image';
 import { Icon } from '@/components/icon';
 import { Card, Num, PrimaryButton } from '@/components/ui';
-import { exercises } from '@/data/programs';
+import { exerciseInfo } from '@/data/exercise-catalog';
 import { useHistory } from '@/features/history/store';
 import { useWorkout } from '@/features/workout/store';
 import { useNow } from '@/features/workout/use-now';
 import { estimate1RM, formatClock } from '@/lib/formulas';
+import { exercisePath, href } from '@/lib/nav';
 import { fromDisplayWeight, weightText, weightUnit } from '@/lib/units';
 import { best1RM, lastSetsFor } from '@/lib/stats';
 import { maxContentWidth, radius } from '@/theme/tokens';
@@ -27,7 +29,7 @@ export default function SessionScreen() {
 
   const ei = session.index;
   const ex = session.exercises[ei];
-  const info = exercises[ex.exerciseId];
+  const info = exerciseInfo(ex.exerciseId);
   const isLast = ei === session.exercises.length - 1;
   const prevSets = lastSetsFor(ex.exerciseId, history);
   const bestEver = best1RM(ex.exerciseId, history);
@@ -75,6 +77,7 @@ export default function SessionScreen() {
 
         <ScrollView contentContainerStyle={{ gap: 16, paddingBottom: 140 }} keyboardShouldPersistTaps="handled">
           <Card style={{ gap: 12, padding: 16 }}>
+            <ExercisePhoto key={ex.exerciseId} exerciseId={ex.exerciseId} onInfo={() => router.push(href(exercisePath(ex.exerciseId)))} />
             <Text style={styles.exName}>{info.name}</Text>
             <Text style={styles.muted}>
               {info.muscle} · {ex.sets.length} sets · {ex.repMin}–{ex.repMax} reps · rest {formatClock(ex.restS)}
@@ -144,7 +147,7 @@ export default function SessionScreen() {
               </View>
             ) : (
               <View style={{ flex: 1 }}>
-                <PrimaryButton title={`Next: ${exercises[session.exercises[ei + 1].exerciseId].name}`} onPress={() => goTo(ei + 1)} />
+                <PrimaryButton title={`Next: ${exerciseInfo(session.exercises[ei + 1].exerciseId).name}`} onPress={() => goTo(ei + 1)} />
               </View>
             )}
           </View>

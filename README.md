@@ -15,6 +15,8 @@ Cross-platform fitness app (mobile + desktop + web) that gives you:
 | [docs/03-ai-food-analysis.md](docs/03-ai-food-analysis.md) | Model choice, prompt, JSON schema, code, accuracy tips |
 | [docs/04-design-system.md](docs/04-design-system.md) | Smart design: tokens, colors, components, responsive rules |
 | [docs/07-setup.md](docs/07-setup.md) | Connect Supabase + Gemini: accounts, sync, meal scan, photos |
+| [docs/08-exercise-library.md](docs/08-exercise-library.md) | The exercise library with photos, built-in programs and the program builder |
+| [THIRD_PARTY.md](THIRD_PARTY.md) | Credits and licenses for the exercise data and photos |
 
 ## Recommended stack (short version)
 

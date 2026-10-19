@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BarChart, LineChart } from '@/components/charts';
 import { Card, Label, Num } from '@/components/ui';
-import { exercises } from '@/data/programs';
+import { exerciseInfo } from '@/data/exercise-catalog';
 import { useHistory } from '@/features/history/store';
 import { useUnits } from '@/features/units/store';
 import { round1, toDisplayWeight, weightUnit } from '@/lib/units';
@@ -60,13 +60,13 @@ export function StrengthTab() {
             accessibilityState={{ selected: id === selected }}
             onPress={() => setPicked(id)}
             style={[styles.chip, id === selected && { backgroundColor: colors.primary }]}>
-            <Text style={[styles.chipText, id === selected && { color: colors.onPrimary }]}>{exercises[id]?.name ?? id}</Text>
+            <Text style={[styles.chipText, id === selected && { color: colors.onPrimary }]}>{exerciseInfo(id).name}</Text>
           </Pressable>
         ))}
       </View>
 
       <Card style={{ gap: 10 }}>
-        <Text style={styles.muted}>{exercises[selected]?.name} · est. 1RM</Text>
+        <Text style={styles.muted}>{exerciseInfo(selected).name} · est. 1RM</Text>
         <View style={styles.valueRow}>
           <Num style={styles.big}>{round1(toDisplayWeight(current, units))} {weightUnit(units)}</Num>
           {delta !== null && (
@@ -76,7 +76,7 @@ export function StrengthTab() {
             </Text>
           )}
         </View>
-        <LineChart values={series.map((p) => p.value)} label={`Estimated one-rep max for ${exercises[selected]?.name}, ${series.length} workouts`} />
+        <LineChart values={series.map((p) => p.value)} label={`Estimated one-rep max for ${exerciseInfo(selected).name}, ${series.length} workouts`} />
         {series.length < 2 && <Text style={styles.muted}>Log this exercise again to see a trend line.</Text>}
       </Card>
 

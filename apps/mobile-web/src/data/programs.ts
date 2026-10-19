@@ -1,24 +1,7 @@
-export type Exercise = { id: string; name: string; muscle: string };
-
-export const exercises: Record<string, Exercise> = {
-  bench: { id: 'bench', name: 'Barbell Bench Press', muscle: 'Chest' },
-  incline: { id: 'incline', name: 'Incline Dumbbell Press', muscle: 'Chest' },
-  ohp: { id: 'ohp', name: 'Overhead Press', muscle: 'Shoulders' },
-  lateral: { id: 'lateral', name: 'Lateral Raise', muscle: 'Shoulders' },
-  pushdown: { id: 'pushdown', name: 'Triceps Pushdown', muscle: 'Triceps' },
-  pullup: { id: 'pullup', name: 'Pull-Up', muscle: 'Back' },
-  row: { id: 'row', name: 'Barbell Row', muscle: 'Back' },
-  latpull: { id: 'latpull', name: 'Lat Pulldown', muscle: 'Back' },
-  facepull: { id: 'facepull', name: 'Face Pull', muscle: 'Rear delts' },
-  curl: { id: 'curl', name: 'Dumbbell Curl', muscle: 'Biceps' },
-  squat: { id: 'squat', name: 'Back Squat', muscle: 'Quads' },
-  rdl: { id: 'rdl', name: 'Romanian Deadlift', muscle: 'Hamstrings' },
-  legpress: { id: 'legpress', name: 'Leg Press', muscle: 'Quads' },
-  legcurl: { id: 'legcurl', name: 'Leg Curl', muscle: 'Hamstrings' },
-  calf: { id: 'calf', name: 'Standing Calf Raise', muscle: 'Calves' },
-};
+import { defaultStartWeight } from './exercise-catalog';
 
 export type Slot = {
+  /** An exercise id: a short legacy id ("bench") or a library id ("Dumbbell_Flyes"). See exercise-catalog.ts. */
   exerciseId: string;
   sets: number;
   repMin: number;
@@ -28,18 +11,27 @@ export type Slot = {
 };
 
 export type ProgramDay = { id: string; name: string; slots: Slot[] };
-export type Program = { id: string; name: string; goal: string; daysPerWeek: number; days: ProgramDay[] };
+export type Program = {
+  id: string;
+  name: string;
+  goal: string;
+  daysPerWeek: number;
+  days: ProgramDay[];
+  /** True for programs the user created; built-in templates are read-only. */
+  custom?: boolean;
+};
 
-const slot = (exerciseId: string, sets: number, repMin: number, repMax: number, restS: number, startWeight: number): Slot => ({
-  exerciseId,
-  sets,
-  repMin,
-  repMax,
-  restS,
-  startWeight,
-});
+export const slot = (
+  exerciseId: string,
+  sets: number,
+  repMin: number,
+  repMax: number,
+  restS: number,
+  startWeight: number = defaultStartWeight(exerciseId),
+): Slot => ({ exerciseId, sets, repMin, repMax, restS, startWeight });
 
-export const programs: Program[] = [
+/** Built-in programs. Ids ("ppl-push") are stored in workout history, so never rename them. */
+export const templatePrograms: Program[] = [
   {
     id: 'ppl',
     name: 'Push / Pull / Legs',
@@ -112,8 +104,117 @@ export const programs: Program[] = [
       },
     ],
   },
+  {
+    id: 'five-by-five',
+    name: '5×5 Strength',
+    goal: 'Strength',
+    daysPerWeek: 3,
+    days: [
+      {
+        id: 'five-a',
+        name: 'Workout A',
+        slots: [slot('squat', 5, 5, 5, 180), slot('bench', 5, 5, 5, 180), slot('row', 5, 5, 5, 180)],
+      },
+      {
+        id: 'five-b',
+        name: 'Workout B',
+        slots: [slot('squat', 5, 5, 5, 180), slot('ohp', 5, 5, 5, 180), slot('Barbell_Deadlift', 1, 5, 5, 180)],
+      },
+    ],
+  },
+  {
+    id: 'home-bodyweight',
+    name: 'Bodyweight at home',
+    goal: 'Beginner',
+    daysPerWeek: 3,
+    days: [
+      {
+        id: 'home-a',
+        name: 'Home A',
+        slots: [
+          slot('Pushups', 3, 8, 15, 60),
+          slot('Bodyweight_Squat', 3, 12, 20, 60),
+          slot('Bodyweight_Walking_Lunge', 3, 10, 12, 60),
+          slot('Superman', 3, 12, 15, 45),
+          slot('Crunches', 3, 15, 20, 45),
+        ],
+      },
+      {
+        id: 'home-b',
+        name: 'Home B',
+        slots: [
+          slot('Push-Ups_With_Feet_Elevated', 3, 8, 12, 60),
+          slot('Inverted_Row', 3, 8, 12, 60),
+          slot('Split_Squats', 3, 10, 12, 60),
+          slot('Butt_Lift_Bridge', 3, 15, 20, 45),
+          slot('Dips_-_Triceps_Version', 3, 8, 12, 60),
+        ],
+      },
+    ],
+  },
+  {
+    id: 'dumbbell-only',
+    name: 'Dumbbells only',
+    goal: 'Muscle',
+    daysPerWeek: 3,
+    days: [
+      {
+        id: 'db-a',
+        name: 'Dumbbell A',
+        slots: [
+          slot('Dumbbell_Bench_Press', 3, 8, 12, 90),
+          slot('One-Arm_Dumbbell_Row', 3, 8, 12, 90),
+          slot('Split_Squat_with_Dumbbells', 3, 10, 12, 90),
+          slot('Dumbbell_Shoulder_Press', 3, 8, 12, 90),
+          slot('curl', 2, 10, 12, 60),
+        ],
+      },
+      {
+        id: 'db-b',
+        name: 'Dumbbell B',
+        slots: [
+          slot('Stiff-Legged_Dumbbell_Deadlift', 3, 10, 12, 90),
+          slot('incline', 3, 8, 12, 90),
+          slot('Dumbbell_Flyes', 3, 12, 15, 60),
+          slot('Hammer_Curls', 3, 10, 12, 60),
+          slot('Calf_Raise_On_A_Dumbbell', 3, 15, 20, 45),
+        ],
+      },
+    ],
+  },
+  {
+    id: 'beginner-machines',
+    name: 'Beginner gym (machines)',
+    goal: 'Beginner',
+    daysPerWeek: 3,
+    days: [
+      {
+        id: 'mach-a',
+        name: 'Machines A',
+        slots: [
+          slot('Leverage_Chest_Press', 3, 10, 12, 90),
+          slot('Seated_Cable_Rows', 3, 10, 12, 90),
+          slot('legpress', 3, 10, 12, 90),
+          slot('Leg_Extensions', 3, 12, 15, 60),
+          slot('Cable_Crunch', 3, 12, 15, 45),
+        ],
+      },
+      {
+        id: 'mach-b',
+        name: 'Machines B',
+        slots: [
+          slot('latpull', 3, 10, 12, 90),
+          slot('Cable_Seated_Lateral_Raise', 3, 12, 15, 60),
+          slot('legcurl', 3, 10, 12, 60),
+          slot('pushdown', 3, 10, 12, 60),
+          slot('calf', 3, 12, 15, 45),
+        ],
+      },
+    ],
+  },
 ];
 
-export function findDay(dayId: string): ProgramDay | undefined {
+/** Finds a day by id in a list of programs. */
+export function findDayIn(programs: Program[], dayId: string): ProgramDay | undefined {
   return programs.flatMap((p) => p.days).find((d) => d.id === dayId);
 }

@@ -6,7 +6,8 @@ import { Icon } from '@/components/icon';
 import { MacroRing } from '@/components/macro-ring';
 import { Screen } from '@/components/screen';
 import { Card, Cell, Chip, Grid, Label, Num, PrimaryButton, ProgressBar } from '@/components/ui';
-import { exercises, findDay, programs } from '@/data/programs';
+import { exerciseInfo } from '@/data/exercise-catalog';
+import { findDay, useAllPrograms } from '@/features/programs/store';
 import { useHistory } from '@/features/history/store';
 import { useMeals } from '@/features/nutrition/store';
 import { OnboardingForm } from '@/features/profile/onboarding-form';
@@ -30,8 +31,9 @@ export default function TodayScreen() {
   const activeSession = useWorkout((st) => st.session);
   const startWorkout = useWorkout((st) => st.start);
   // The card shows the session in progress if there is one, otherwise the next day in the program.
+  const programs = useAllPrograms();
   const shownDay = (activeSession && findDay(activeSession.dayId)) || nextWorkoutDay(workouts, programs);
-  const shownMuscles = [...new Set(shownDay.slots.map((sl) => exercises[sl.exerciseId].muscle))].slice(0, 4);
+  const shownMuscles = [...new Set(shownDay.slots.map((sl) => exerciseInfo(sl.exerciseId).muscle).filter(Boolean))].slice(0, 4);
   const week = weekDays(workouts, now);
   const doneThisWeek = workoutsThisWeek(workouts, now);
   const eaten = totalsOf(mealsOnDay(meals, now).flatMap((m) => m.items));

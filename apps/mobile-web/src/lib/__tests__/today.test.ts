@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { programs } from '@/data/programs';
+import { templatePrograms as programs } from '@/data/programs';
 
 import { estimateMinutes, nextWorkoutDay, weekDays, workoutsThisWeek } from '../today';
 import type { FinishedWorkout } from '../stats';
